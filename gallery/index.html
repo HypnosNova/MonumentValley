@@ -35,9 +35,9 @@
       }
 
       let app = new NOVA.App();
-
+      let size = app.getWorldHeight() / 20;
       let level = new HYPEOMETRY.GameLevel( app, 0x4578ff, map, {
-        blockSize: app.getWorldHeight() / 20,
+        blockSize: size,
         moveSpeed: 300
       } );
       app.world = level;
@@ -49,27 +49,57 @@
       } );
 
       loadKey();
+      loadMusic();
+
+      function loadMusic() {
+        let audioListener = new THREE.AudioListener();
+        level.camera.add( audioListener );
+        let bgm = new THREE.Audio( audioListener );
+        let winSound = new THREE.Audio( audioListener );
+
+        level.scene.add( bgm );
+        level.scene.add( winSound );
+        let loader = new THREE.AudioLoader();
+        loader.load(
+          'audio/bgm.mp3',
+          ( audioBuffer ) => {
+            bgm.setBuffer( audioBuffer );
+            bgm.play();
+            bgm.setLoop( true );
+          }
+        );
+        loader.load(
+          'audio/win.mp3',
+          ( audioBuffer ) => {
+            winSound.setBuffer( audioBuffer );
+            level.winSound = winSound;
+          }
+        );
+      }
 
       function loadKey() {
-        var mtlLoader = new THREE.MTLLoader();
+        var mtlLoader = new THREE.MTLLoader( level.loaderFactory.manager );
         mtlLoader.setPath( 'models/key/' );
-        mtlLoader.load( 'mariokey.mtl', function( materials ) {
+        mtlLoader.load( 'mariokey.mtl', ( materials ) => {
           materials.preload();
           var objLoader = new THREE.OBJLoader();
           objLoader.setMaterials( materials );
           objLoader.setPath( 'models/key/' );
-          objLoader.load( 'mariokey.obj', function( obj ) {
-            level.scene.add( obj );
-            obj.scale.set( 4, 4, 4 );
-            obj.position.set( 6 * 36, 21 * 36 - 18, 2 * 36 );
-            level.logicLoop.add( () => {
-              obj.rotation.y += 0.01;
+          objLoader.load( 'mariokey.obj', ( obj ) => {
+            level.meshFactory.addUserObjectCreator( "key", ( item, useless, container ) => {
+              let mesh = obj.children[ 0 ].clone();
+              mesh.scale.set( item.sx || 1, item.sy || 1, item.sz || 1 );
+              mesh.position.set( item.x * size || 0, item.y * size || 0, item.z *
+                size || 0 );
+              mesh.rotation.set( item.rx || 0, item.ry || 0, item.rz || 0 );
+              container.add( mesh );
+              return mesh;
             } );
           } );
         } );
       }
 
-      let loader = new THREE.ColladaLoader();
+      let loader = new THREE.ColladaLoader( level.loaderFactory.manager );
       loader.load( 'models/Mario/mario.dae', function( collada ) {
         elf = collada.scene;
         elf.rotation.y = Math.PI / 2;
@@ -84,8 +114,11 @@
         } );
 
         createBoneAnimation( elf.children[ 1 ].skeleton.bones, "mario_run", 'walk', true, 30 );
-        createBoneAnimation( elf.children[ 1 ].skeleton.bones, "mario_wait", 'idle', true, 30 );
-        createBoneAnimation( elf.children[ 1 ].skeleton.bones, "mario_clear", 'win', true, 16 );
+        createBoneAnimation( elf.children[ 1 ].skeleton.bones, "mario_wait", 'idle', true, 30, () => {
+          charactor.play( 'idle' );
+          level.setCharactor( charactor );
+        } );
+        createBoneAnimation( elf.children[ 1 ].skeleton.bones, "mario_clear", 'win', false, 16 );
 
         for ( let mesh of elf.children ) {
           if ( mesh.material ) {
@@ -93,15 +126,10 @@
           }
         }
 
-        setTimeout( () => {
-          charactor.play( 'idle' )
-          level.setCharactor( charactor );
-        }, 1000 );
-
       } );
 
-      function createBoneAnimation( bone, smd, id, isLoop, duration ) {
-        let smdloader = new THREE.FileLoader();
+      function createBoneAnimation( bone, smd, id, isLoop, duration, callback ) {
+        let smdloader = new THREE.FileLoader( level.loaderFactory.manager );
         smdloader.load( 'models/Mario/smd/' + smd + '.smd', ( smd ) => {
           let actionGroup = new ActonGroup();
           let smdobj = parseSMD( smd );
@@ -111,6 +139,10 @@
             actionGroup.actions.push( animate( smdobj[ i ], isLoop, duration ) );
           }
           charactor.actions[ id ] = actionGroup;
+
+          if ( callback ) {
+            callback();
+          }
         } );
       }
 
@@ -156,8 +188,10 @@
                   animateObj.index += 3;
                   if ( animateObj.index >= pa.length ) {
                     animateObj.index = 0;
-                  }
-                  if ( animateObj.loop ) {
+                    if ( animateObj.loop ) {
+                      ani();
+                    }
+                  } else {
                     ani();
                   }
                 } );

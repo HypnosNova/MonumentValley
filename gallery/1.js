@@ -222,8 +222,17 @@ var map = {
 		x: 6,
 		y: 20,
 		z: 2,
+		height: 4
+	}, {
+		type: "key",
+		sx: 4.5,
+		sy: 4.5,
+		sz: 4.5,
+		x: 6,
+		y: 20.5,
+		z: 2,
 		height: 4,
-		materialId: "m5"
+		id: "key"
 	}, {
 		type: "turntablex",
 		id: "turn",
@@ -765,11 +774,11 @@ var map = {
 			neighbors: [ "p29" ],
 			materialId: "m4",
 			hasCome: function() {
-				setTimeout(()=>{
-					app.world.charactor.play('win');
-				});
-				
-//				app.world.showEndBoard();
+				setTimeout( () => {
+					app.world.scene.remove( app.world.childrenWithId.key );
+					app.world.charactor.play( 'win' );
+					app.world.winSound.play();
+				} );
 			}
 		},
 		"p31": {
