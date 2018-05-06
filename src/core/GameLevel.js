@@ -52,6 +52,10 @@ class GameLevel extends NOVA.World {
 			this.createPathToScene( this.data.path[ key ] );
 		}
 
+		if ( this.data.onGameStart ) {
+			this.data.onGameStart();
+		}
+
 	}
 
 	initMaterials( materials ) {
@@ -61,7 +65,9 @@ class GameLevel extends NOVA.World {
 				color: item.color,
 				transparent: true,
 				opacity: materials[ i ].opacity === undefined ? 1 : materials[ i ].opacity,
-				map: item.mapId ? this.loaderFactory.Resource.textures[ item.mapId ] : undefined
+				map: item.mapId ? this.loaderFactory.Resource.textures[ item.mapId ] : undefined,
+				depthWrite: true,
+				depthTest: true
 			};
 
 			if ( item.type == "L" ) {
@@ -211,7 +217,7 @@ class GameLevel extends NOVA.World {
 			obj.scale.y = pathInfo.sy;
 		}
 		if ( pathInfo.cannotClick ) {
-			obj.isPenetrated = true;
+			contain.remove( obj );
 		} else {
 			obj.events = new NOVA.Events();
 			obj.events.click.add( () => {
@@ -221,6 +227,7 @@ class GameLevel extends NOVA.World {
 	}
 
 	clickCommonEvent( obj ) {
+		console.log(obj.pathId)
 		if ( !this.charactor ) {
 			return;
 		}
@@ -282,12 +289,15 @@ class GameLevel extends NOVA.World {
 
 		var prevP = this.data.path[ this.charactor.currentPath ];
 		vec.y -= 0.5 * size;
+
 		if ( prevP.changeSpeed && prevP.changeSpeed[ nextP.id ] ) {
 			var str = prevP.changeSpeed[ nextP.id ];
 			if ( typeof str === "number" ) {
 				time = str;
 			} else if ( str === "auto" ) {
 				time = time / size * this.charactor.position.distanceTo( vec );
+			} else {
+				time = 0;
 			}
 		}
 
@@ -309,23 +319,37 @@ class GameLevel extends NOVA.World {
 			nextP.onComing();
 		}
 
-		this.charactor.play( 'walk' );
+		this.charactor.play( this.charactor.actionState || "walk" );
 		this.calculateFaceAngle( this.charactor, vec );
-		new TWEEN.Tween( this.charactor.position )
-			.to( vec, time )
-			.start()
-			.onComplete( () => {
-				if ( nextP.hasCome ) {
-					nextP.hasCome();
-				}
-				if ( prevP.hasLeft ) {
-					prevP.hasLeft();
-				}
-				this.charactor.currentPath = this.charactor.walkingPath[ 0 ];
-				arr = this.charactor.walkingPath.splice( 1 );
-				this.charactor.walkingPath = [];
-				this.moveCharacter( arr );
-			} );
+		if ( time ) {
+			new TWEEN.Tween( this.charactor.position )
+				.to( vec, time )
+				.start()
+				.onComplete( () => {
+					if ( nextP.hasCome ) {
+						nextP.hasCome();
+					}
+					if ( prevP.hasLeft ) {
+						prevP.hasLeft();
+					}
+					this.charactor.currentPath = this.charactor.walkingPath[ 0 ];
+					arr = this.charactor.walkingPath.splice( 1 );
+					this.charactor.walkingPath = [];
+					this.moveCharacter( arr );
+				} );
+		} else {
+			this.charactor.position.set( vec.x, vec.y, vec.z );
+			if ( nextP.hasCome ) {
+				nextP.hasCome();
+			}
+			if ( prevP.hasLeft ) {
+				prevP.hasLeft();
+			}
+			this.charactor.currentPath = this.charactor.walkingPath[ 0 ];
+			arr = this.charactor.walkingPath.splice( 1 );
+			this.charactor.walkingPath = [];
+			this.moveCharacter( arr );
+		}
 
 	}
 
@@ -337,6 +361,7 @@ class GameLevel extends NOVA.World {
 		let EPSILON = 0.01;
 		let dx = nextPoint.x - vec.x;
 		let dz = nextPoint.z - vec.z;
+		charactor.actionState = "walk";
 		if ( dx > EPSILON && Math.abs(
 				dz ) <= EPSILON ) {
 			charactor.rotation.y = 0;
@@ -347,20 +372,24 @@ class GameLevel extends NOVA.World {
 		} else if ( dz > EPSILON && Math.abs( dx ) <= EPSILON ) {
 			charactor.rotation.y = Math.PI * 1.5;
 		} else if ( Math.abs( dx ) <= EPSILON && Math.abs( dz ) <= EPSILON ) {
-			//垂直TODO
+			charactor.play( "ladder" );
+			charactor.actionState = "ladder";
 		} else {
-			if ( Math.abs( dz ) > Math.abs( dz ) ) {
+			if ( Math.abs( dz ) - Math.abs( dz ) > EPSILON ) {
 				if ( dz > 0 ) {
 					charactor.rotation.y = 0;
 				} else {
 					charactor.rotation.y = Math.PI;
 				}
-			} else {
+			} else if ( Math.abs( dz ) - Math.abs( dz ) < -EPSILON ) {
 				if ( dx > 0 ) {
 					charactor.rotation.y = Math.PI * 1.5;
 				} else {
 					charactor.rotation.y = Math.PI * 0.5;
 				}
+			} else {
+				charactor.play( "ladder" );
+				charactor.actionState = "ladder";
 			}
 		}
 	}

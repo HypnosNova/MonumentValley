@@ -1,4 +1,4 @@
-import { TurntableX } from './Turntable';
+import { TurntableX, TurntableY } from './Turntable';
 
 function firstUpperCase( word = "cube" ) {
 	return word.substring( 0, 1 )
@@ -42,8 +42,8 @@ class MeshFactory {
 
 	createRoof( item, ms, container ) {
 		let material;
-		for ( let i in core.map.materials ) {
-			material = core.map.materials[ i ];
+		for ( let i in this.materials ) {
+			material = this.materials[ i ];
 			break;
 		}
 		let group = new THREE.Group();
@@ -51,82 +51,82 @@ class MeshFactory {
 		let geometry = new THREE.CylinderBufferGeometry( step * 0.95, step, this.size /
 			5,
 			4 );
-		let m = core.map.materials[ ms[ 0 ] ] || material;
+		let m = this.materials[ ms[ 0 ] ] || material;
 		let cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = -step * 0.4;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step, step, this.size / 10, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = -this.size * 0.45;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step * 1.05, step * 0.95, this.size /
 			5, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = -this.size * 0.2;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step * 1.2, step * 1.05, this.size /
 			5, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = 0;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step * 1.25, step * 1.2, this.size /
 			5, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = this.size * 0.2;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step * 1.15, step * 1.25, this.size /
 			5, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = this.size * 0.4;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step * 0.90, step * 1.15, this.size /
 			5, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = this.size * 0.6;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step * 0.63, step * 0.90, this.size /
 			5, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = this.size * 0.8;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step * 0.45, step * 0.63, this.size /
 			5, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = this.size;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step * 0.30, step * 0.45, this.size /
 			5, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = this.size * 1.2;
 		group.add( cylinder );
 		geometry = new THREE.CylinderBufferGeometry( step * 0.15, step * 0.30, this.size *
 			0.4, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = this.size * 1.5;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step * 0.001, step * 0.15, this
 			.size * 0.4, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = this.size * 1.9;
 		group.add( cylinder );
@@ -163,7 +163,7 @@ class MeshFactory {
 	createGround( item, m, container ) {
 		let cube = new THREE.Mesh( this.geometryResource.groundGeometry, m );
 		cube.position.set( item.x * this.size || 0, ( item.y + 5 / 12 ) * this.size ||
-			0, item.z *addUserObjectCreatorthis.size || 0 );
+			0, item.z * this.size || 0 );
 		cube.rotation.set( item.rx || 0, item.ry || 0, item.rz || 0 );
 		cube.scale.x = item.width;
 		cube.scale.y = item.height;
@@ -292,6 +292,12 @@ class MeshFactory {
 
 	createTurntablex( item, useless, container ) {
 		let turntable = new TurntableX( item, this, this.gameLevel.app );
+		container.add( turntable );
+		return turntable;
+	}
+	
+	createTurntabley( item, useless, container ) {
+		let turntable = new TurntableY( item, this, this.gameLevel.app );
 		container.add( turntable );
 		return turntable;
 	}

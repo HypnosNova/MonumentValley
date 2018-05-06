@@ -60,7 +60,7 @@ class GeometryResource {
 		return arcGeometry;
 	}
 
-	initRoundedRectGeometry( size ) {
+	initRoundRectGeometry( size ) {
 		let roundedRectShape = new THREE.Shape();
 		( function( ctx, x, y, width, height, radius ) {
 			ctx.moveTo( x, y + radius );
@@ -107,7 +107,7 @@ class GeometryResource {
 		this.triangleGeometry = this.initTriangleGeomerty( this.size );
 		this.stickGeometry = this.initStickGeomerty( this.size );
 		this.arcGeometry = this.initArcGeomerty( this.size );
-		this.roundedRectGeometry = this.initRoundedRectGeometry( this.size );
+		this.roundRectGeometry = this.initRoundRectGeometry( this.size );
 		this.ringGeometry = this.initRingGeometry( this.size );
 	}
 
@@ -366,6 +366,260 @@ class TurntableX extends THREE.Group {
 	}
 }
 
+class TurntableY extends THREE.Group {
+	constructor( options, factory, app ) {
+		super();
+		this.disable = false;
+		this.app = app;
+		this.options = options;
+		let defaultM;
+		for ( let i in factory.materials ) {
+			defaultM = factory.materials[ i ];
+			break;
+		}
+		this.factory = factory;
+		this.size = factory.size;
+		this.materials = factory.materials;
+		this.position.set( options.x * this.size || 0, options.y * this.size || 0,
+			options.z * this.size || 0 );
+		this.rotation.z = Math.PI / 2;
+
+		let axisG = new THREE.BoxBufferGeometry( this.size, this.size / 4, this.size /
+			4 );
+		let axisM = this.materials[ options.axisMaterial ] || defaultM;
+
+		let axis = new THREE.Mesh( axisG, axisM );
+		axis.position.x = -this.size;
+		this.add( axis );
+
+		let hoopG = new THREE.CylinderBufferGeometry( this.size / 2.3, this.size /
+			2.3, this.size, 32 );
+		let hoopM = this.materials[ options.hoopMaterial ] || defaultM;
+		this.hoop = new THREE.Mesh( hoopG, hoopM );
+		this.hoop.rotation.z = Math.PI / 2;
+		this.add( this.hoop );
+
+		let rodG = new THREE.CylinderBufferGeometry( this.size / 6, this.size / 6,
+			this.size * 2.5, 32 );
+		let rodM = this.materials[ options.rodMaterial ] || defaultM;
+		this.rod1 = new THREE.Mesh( rodG, rodM );
+		this.add( this.rod1 );
+
+		this.rod2 = this.rod1.clone();
+		this.rod2.rotation.x = Math.PI / 2;
+		this.add( this.rod2 );
+
+		let poleG = new THREE.CylinderBufferGeometry( this.size / 4, this.size / 4,
+			this.size * 0.5, 32 );
+		let poleM = this.materials[ options.poleMaterial ] || defaultM;
+		this.pole1 = new THREE.Mesh( poleG, poleM );
+		this.pole1.position.y = this.size * 1.5;
+		this.add( this.pole1 );
+		this.pole2 = this.pole1.clone();
+		this.pole2.position.y = -this.size * 1.5;
+		this.add( this.pole2 );
+		this.pole3 = this.pole1.clone();
+		this.pole3.position.y = 0;
+		this.pole3.position.z = this.size * 1.5;
+		this.pole3.rotation.x = Math.PI / 2;
+		this.add( this.pole3 );
+		this.pole4 = this.pole1.clone();
+		this.pole4.position.y = 0;
+		this.pole4.position.z = -this.size * 1.5;
+		this.pole4.rotation.x = Math.PI / 2;
+		this.add( this.pole4 );
+
+		this.dragEnd = this.dragEnd.bind( this );
+		this.dragMove = this.dragMove.bind( this );
+		this.addEvent();
+	}
+
+	becomeDisable() {
+		if ( this.disable ) {
+			return;
+		}
+		this.disable = true;
+		new TWEEN.Tween( this.rod1.scale )
+			.to( {
+				y: 0.5
+			}, 350 )
+			.start();
+		new TWEEN.Tween( this.rod2.scale )
+			.to( {
+				y: 0.5
+			}, 350 )
+			.start();
+		new TWEEN.Tween( this.pole1.position )
+			.to( {
+				y: this.pole1.position.y / 2
+			}, 350 )
+			.start();
+		new TWEEN.Tween( this.pole2.position )
+			.to( {
+				y: this.pole2.position.y / 2
+			}, 350 )
+			.start();
+		new TWEEN.Tween( this.pole3.position )
+			.to( {
+				z: this.pole3.position.z / 2
+			}, 350 )
+			.start();
+		new TWEEN.Tween( this.pole4.position )
+			.to( {
+				z: this.pole4.position.z / 2
+			}, 350 )
+			.start();
+	}
+
+	becomeAble() {
+		if ( !this.disable ) {
+			return;
+		}
+		this.disable = false;
+		new TWEEN.Tween( this.rod1.scale )
+			.to( {
+				y: 1
+			}, 350 )
+			.start();
+		new TWEEN.Tween( this.rod2.scale )
+			.to( {
+				y: 1
+			}, 350 )
+			.start();
+		new TWEEN.Tween( this.pole1.position )
+			.to( {
+				y: this.pole1.position.y * 2
+			}, 350 )
+			.start();
+		new TWEEN.Tween( this.pole2.position )
+			.to( {
+				y: this.pole2.position.y * 2
+			}, 350 )
+			.start();
+		new TWEEN.Tween( this.pole3.position )
+			.to( {
+				z: this.pole3.position.z * 2
+			}, 350 )
+			.start();
+		new TWEEN.Tween( this.pole4.position )
+			.to( {
+				z: this.pole4.position.z * 2
+			}, 350 )
+			.start();
+	}
+
+	addEvent() {
+		this.hoop.events = new NOVA.Events();
+		this.hoop.events.mousedown.add( ( event ) => {
+			this.onDown( event );
+		} );
+		this.hoop.events.mouseup.add( ( event ) => {
+			this.dragEnd( event );
+		} );
+		this.pole4.events = this.pole3.events = this.pole2.events = this.pole1.events =
+			this.rod2.events = this.rod1.events = this.hoop.events;
+	}
+
+	onDown( event ) {
+		if ( this.disable ) {
+			return;
+		}
+		this.isDown = true;
+		let canvasXY = this.app.sceneCoordinateToCanvasCoordinate( this );
+		let distance = event.center.distanceTo( canvasXY );
+		if ( distance > 0 ) {
+			this.clickAngle = 0;
+			if ( event.center.y > canvasXY.y ) {
+				this.clickAngle = 2 * Math.PI - Math.acos( ( event.center.x - canvasXY.x ) /
+					distance );
+			} else {
+				this.clickAngle = Math.acos( ( event.center.x - canvasXY.x ) / distance );
+			}
+		} else {
+			this.clickAngle = 0;
+		}
+		this.preAngle = this.clickAngle;
+		let dom = this.app.renderer.domElement;
+		dom.addEventListener( "mouseup", this.dragEnd, false );
+		dom.addEventListener( "touchend", this.dragEnd, false );
+		dom.addEventListener( "mousemove", this.dragMove, false );
+		dom.addEventListener( "touchmove", this.dragMove, false );
+	}
+
+	dragEnd( event ) {
+		this.isDown = false;
+		let dom = this.app.renderer.domElement;
+		dom.removeEventListener( "mousemove", this.dragMove, false );
+		dom.removeEventListener( "touchmove", this.dragMove, false );
+		dom.removeEventListener( "mouseup", this.dragEnd, false );
+		dom.removeEventListener( "touchend", this.dragEnd, false );
+		let tmp = this.rotation.y;
+		while ( tmp < 0 ) {
+			tmp += 2 * Math.PI;
+		}
+		this.rotation.y = tmp;
+		if ( this.rotation.y > Math.PI / 4 * 7 ) {
+			this.rotation.y -= 2 * Math.PI;
+		}
+		tmp -= Math.PI / 4;
+		let quaro = 0;
+		while ( tmp > 0 ) {
+			quaro++;
+			tmp -= Math.PI / 2;
+		}
+
+		quaro = quaro % 4;
+		if ( quaro === 0 ) {
+			tmp = 0;
+		} else if ( quaro === 1 ) {
+			tmp = Math.PI / 2;
+		} else if ( quaro === 2 ) {
+			tmp = Math.PI;
+		} else if ( quaro === 3 ) {
+			tmp = Math.PI * 1.5;
+		}
+		let time = Math.abs( this.rotation.y - tmp ) * 400;
+		new TWEEN.Tween( this.rotation )
+			.to( {
+				y: tmp
+			}, time )
+			.easing( TWEEN.Easing.Back.Out )
+			.start();
+		if ( this.options.funcEnd ) {
+			this.options.funcEnd( event, this.rotation.y, this.factory.gameLevel );
+		}
+	}
+
+	dragMove( event ) {
+		if ( event.touches ) {
+			var e = event.touches[ 0 ];
+		} else {
+			var e = event;
+		}
+		e.center = new THREE.Vector2( e.clientX, e.clientY );
+		if ( this.isDown ) {
+			var canvasXY = this.app.sceneCoordinateToCanvasCoordinate( this );
+			var distance = e.center.distanceTo( canvasXY );
+			if ( distance > 0 ) {
+				this.clickAngle = 0;
+				if ( e.center.y > canvasXY.y ) {
+					this.clickAngle = 2 * Math.PI - Math.acos( ( e.center.x - canvasXY.x ) /
+						distance );
+				} else {
+					this.clickAngle = Math.acos( ( e.center.x - canvasXY.x ) / distance );
+				}
+			} else {
+				this.clickAngle = 0;
+			}
+			this.rotation.y += this.clickAngle - this.preAngle;
+			this.preAngle = this.clickAngle;
+			if ( this.options.funcMove ) {
+				this.options.funcMove( e, this.rotation.y, this.factory.gameLevel );
+			}
+		}
+	}
+}
+
 function firstUpperCase( word = "cube" ) {
 	return word.substring( 0, 1 )
 		.toUpperCase() + word.substring( 1 );
@@ -408,8 +662,8 @@ class MeshFactory {
 
 	createRoof( item, ms, container ) {
 		let material;
-		for ( let i in core.map.materials ) {
-			material = core.map.materials[ i ];
+		for ( let i in this.materials ) {
+			material = this.materials[ i ];
 			break;
 		}
 		let group = new THREE.Group();
@@ -417,82 +671,82 @@ class MeshFactory {
 		let geometry = new THREE.CylinderBufferGeometry( step * 0.95, step, this.size /
 			5,
 			4 );
-		let m = core.map.materials[ ms[ 0 ] ] || material;
+		let m = this.materials[ ms[ 0 ] ] || material;
 		let cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = -step * 0.4;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step, step, this.size / 10, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = -this.size * 0.45;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step * 1.05, step * 0.95, this.size /
 			5, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = -this.size * 0.2;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step * 1.2, step * 1.05, this.size /
 			5, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = 0;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step * 1.25, step * 1.2, this.size /
 			5, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = this.size * 0.2;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step * 1.15, step * 1.25, this.size /
 			5, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = this.size * 0.4;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step * 0.90, step * 1.15, this.size /
 			5, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = this.size * 0.6;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step * 0.63, step * 0.90, this.size /
 			5, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = this.size * 0.8;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step * 0.45, step * 0.63, this.size /
 			5, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = this.size;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step * 0.30, step * 0.45, this.size /
 			5, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = this.size * 1.2;
 		group.add( cylinder );
 		geometry = new THREE.CylinderBufferGeometry( step * 0.15, step * 0.30, this.size *
 			0.4, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = this.size * 1.5;
 		group.add( cylinder );
 
 		geometry = new THREE.CylinderBufferGeometry( step * 0.001, step * 0.15, this
 			.size * 0.4, 4 );
-		m = core.map.materials[ ms[ 1 ] ] || material;
+		m = this.materials[ ms[ 1 ] ] || material;
 		cylinder = new THREE.Mesh( geometry, m );
 		cylinder.position.y = this.size * 1.9;
 		group.add( cylinder );
@@ -529,7 +783,7 @@ class MeshFactory {
 	createGround( item, m, container ) {
 		let cube = new THREE.Mesh( this.geometryResource.groundGeometry, m );
 		cube.position.set( item.x * this.size || 0, ( item.y + 5 / 12 ) * this.size ||
-			0, item.z *addUserObjectCreatorthis.size || 0 );
+			0, item.z * this.size || 0 );
 		cube.rotation.set( item.rx || 0, item.ry || 0, item.rz || 0 );
 		cube.scale.x = item.width;
 		cube.scale.y = item.height;
@@ -658,6 +912,12 @@ class MeshFactory {
 
 	createTurntablex( item, useless, container ) {
 		let turntable = new TurntableX( item, this, this.gameLevel.app );
+		container.add( turntable );
+		return turntable;
+	}
+	
+	createTurntabley( item, useless, container ) {
+		let turntable = new TurntableY( item, this, this.gameLevel.app );
 		container.add( turntable );
 		return turntable;
 	}
@@ -833,6 +1093,10 @@ class GameLevel extends NOVA.World {
 			this.createPathToScene( this.data.path[ key ] );
 		}
 
+		if ( this.data.onGameStart ) {
+			this.data.onGameStart();
+		}
+
 	}
 
 	initMaterials( materials ) {
@@ -842,7 +1106,9 @@ class GameLevel extends NOVA.World {
 				color: item.color,
 				transparent: true,
 				opacity: materials[ i ].opacity === undefined ? 1 : materials[ i ].opacity,
-				map: item.mapId ? this.loaderFactory.Resource.textures[ item.mapId ] : undefined
+				map: item.mapId ? this.loaderFactory.Resource.textures[ item.mapId ] : undefined,
+				depthWrite: true,
+				depthTest: true
 			};
 
 			if ( item.type == "L" ) {
@@ -992,7 +1258,7 @@ class GameLevel extends NOVA.World {
 			obj.scale.y = pathInfo.sy;
 		}
 		if ( pathInfo.cannotClick ) {
-			obj.isPenetrated = true;
+			contain.remove( obj );
 		} else {
 			obj.events = new NOVA.Events();
 			obj.events.click.add( () => {
@@ -1002,6 +1268,7 @@ class GameLevel extends NOVA.World {
 	}
 
 	clickCommonEvent( obj ) {
+		console.log(obj.pathId);
 		if ( !this.charactor ) {
 			return;
 		}
@@ -1063,12 +1330,15 @@ class GameLevel extends NOVA.World {
 
 		var prevP = this.data.path[ this.charactor.currentPath ];
 		vec.y -= 0.5 * size;
+
 		if ( prevP.changeSpeed && prevP.changeSpeed[ nextP.id ] ) {
 			var str = prevP.changeSpeed[ nextP.id ];
 			if ( typeof str === "number" ) {
 				time = str;
 			} else if ( str === "auto" ) {
 				time = time / size * this.charactor.position.distanceTo( vec );
+			} else {
+				time = 0;
 			}
 		}
 
@@ -1090,23 +1360,37 @@ class GameLevel extends NOVA.World {
 			nextP.onComing();
 		}
 
-		this.charactor.play( 'walk' );
+		this.charactor.play( this.charactor.actionState || "walk" );
 		this.calculateFaceAngle( this.charactor, vec );
-		new TWEEN.Tween( this.charactor.position )
-			.to( vec, time )
-			.start()
-			.onComplete( () => {
-				if ( nextP.hasCome ) {
-					nextP.hasCome();
-				}
-				if ( prevP.hasLeft ) {
-					prevP.hasLeft();
-				}
-				this.charactor.currentPath = this.charactor.walkingPath[ 0 ];
-				arr = this.charactor.walkingPath.splice( 1 );
-				this.charactor.walkingPath = [];
-				this.moveCharacter( arr );
-			} );
+		if ( time ) {
+			new TWEEN.Tween( this.charactor.position )
+				.to( vec, time )
+				.start()
+				.onComplete( () => {
+					if ( nextP.hasCome ) {
+						nextP.hasCome();
+					}
+					if ( prevP.hasLeft ) {
+						prevP.hasLeft();
+					}
+					this.charactor.currentPath = this.charactor.walkingPath[ 0 ];
+					arr = this.charactor.walkingPath.splice( 1 );
+					this.charactor.walkingPath = [];
+					this.moveCharacter( arr );
+				} );
+		} else {
+			this.charactor.position.set( vec.x, vec.y, vec.z );
+			if ( nextP.hasCome ) {
+				nextP.hasCome();
+			}
+			if ( prevP.hasLeft ) {
+				prevP.hasLeft();
+			}
+			this.charactor.currentPath = this.charactor.walkingPath[ 0 ];
+			arr = this.charactor.walkingPath.splice( 1 );
+			this.charactor.walkingPath = [];
+			this.moveCharacter( arr );
+		}
 
 	}
 
@@ -1118,6 +1402,7 @@ class GameLevel extends NOVA.World {
 		let EPSILON = 0.01;
 		let dx = nextPoint.x - vec.x;
 		let dz = nextPoint.z - vec.z;
+		charactor.actionState = "walk";
 		if ( dx > EPSILON && Math.abs(
 				dz ) <= EPSILON ) {
 			charactor.rotation.y = 0;
@@ -1128,20 +1413,24 @@ class GameLevel extends NOVA.World {
 		} else if ( dz > EPSILON && Math.abs( dx ) <= EPSILON ) {
 			charactor.rotation.y = Math.PI * 1.5;
 		} else if ( Math.abs( dx ) <= EPSILON && Math.abs( dz ) <= EPSILON ) {
-			//垂直TODO
+			charactor.play( "ladder" );
+			charactor.actionState = "ladder";
 		} else {
-			if ( Math.abs( dz ) > Math.abs( dz ) ) {
+			if ( Math.abs( dz ) - Math.abs( dz ) > EPSILON ) {
 				if ( dz > 0 ) {
 					charactor.rotation.y = 0;
 				} else {
 					charactor.rotation.y = Math.PI;
 				}
-			} else {
+			} else if ( Math.abs( dz ) - Math.abs( dz ) < -EPSILON ) {
 				if ( dx > 0 ) {
 					charactor.rotation.y = Math.PI * 1.5;
 				} else {
 					charactor.rotation.y = Math.PI * 0.5;
 				}
+			} else {
+				charactor.play( "ladder" );
+				charactor.actionState = "ladder";
 			}
 		}
 	}

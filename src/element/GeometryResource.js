@@ -54,7 +54,7 @@ class GeometryResource {
 		return arcGeometry;
 	}
 
-	initRoundedRectGeometry( size ) {
+	initRoundRectGeometry( size ) {
 		let roundedRectShape = new THREE.Shape();
 		( function( ctx, x, y, width, height, radius ) {
 			ctx.moveTo( x, y + radius );
@@ -101,7 +101,7 @@ class GeometryResource {
 		this.triangleGeometry = this.initTriangleGeomerty( this.size );
 		this.stickGeometry = this.initStickGeomerty( this.size );
 		this.arcGeometry = this.initArcGeomerty( this.size );
-		this.roundedRectGeometry = this.initRoundedRectGeometry( this.size );
+		this.roundRectGeometry = this.initRoundRectGeometry( this.size );
 		this.ringGeometry = this.initRingGeometry( this.size );
 	}
 
