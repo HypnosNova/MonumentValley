@@ -1274,7 +1274,7 @@
 		}
 
 		clickCommonEvent( obj ) {
-			console.log(obj.pathId);
+			console.log( obj.pathId );
 			if ( !this.charactor ) {
 				return;
 			}
@@ -1409,8 +1409,7 @@
 			let dx = nextPoint.x - vec.x;
 			let dz = nextPoint.z - vec.z;
 			charactor.actionState = "walk";
-			if ( dx > EPSILON && Math.abs(
-					dz ) <= EPSILON ) {
+			if ( dx > EPSILON && Math.abs( dz ) <= EPSILON ) {
 				charactor.rotation.y = 0;
 			} else if ( dx < -EPSILON && Math.abs( dz ) <= EPSILON ) {
 				charactor.rotation.y = Math.PI;
@@ -1422,17 +1421,19 @@
 				charactor.play( "ladder" );
 				charactor.actionState = "ladder";
 			} else {
-				if ( Math.abs( dz ) - Math.abs( dz ) > EPSILON ) {
+
+				console.log( dz, dx );
+				if ( Math.abs( dz ) - Math.abs( dx ) > EPSILON ) {
 					if ( dz > 0 ) {
-						charactor.rotation.y = 0;
-					} else {
-						charactor.rotation.y = Math.PI;
-					}
-				} else if ( Math.abs( dz ) - Math.abs( dz ) < -EPSILON ) {
-					if ( dx > 0 ) {
 						charactor.rotation.y = Math.PI * 1.5;
 					} else {
 						charactor.rotation.y = Math.PI * 0.5;
+					}
+				} else if ( Math.abs( dz ) - Math.abs( dx ) < -EPSILON ) {
+					if ( dx > 0 ) {
+						charactor.rotation.y = 0;
+					} else {
+						charactor.rotation.y = Math.PI;
 					}
 				} else {
 					charactor.play( "ladder" );

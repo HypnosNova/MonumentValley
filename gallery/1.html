@@ -64,7 +64,7 @@
           'audio/bgm.mp3',
           ( audioBuffer ) => {
             bgm.setBuffer( audioBuffer );
-            bgm.play();
+//          bgm.play();
             bgm.setLoop( true );
           }
         );
@@ -119,6 +119,7 @@
           level.setCharactor( charactor );
         } );
         createBoneAnimation( elf.children[ 1 ].skeleton.bones, "mario_clear", 'win', false, 16 );
+        createBoneAnimation( elf.children[ 1 ].skeleton.bones, "mario_ladder", 'ladder', true, 16 );
 
         for ( let mesh of elf.children ) {
           if ( mesh.material ) {
